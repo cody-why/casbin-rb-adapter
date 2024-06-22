@@ -4,7 +4,7 @@
 
 # Casbin Rbatis adapter
 
-Rbatis adapter for casbin-rs. With this library, Casbin can load policy or save policy from Rbatis supported databases.
+Rbatis adapter for casbin. With this library, Casbin can load policy or save policy from Rbatis supported databases.
 
 ## Supported databases, see [Rbatis](https://docs.rs/crate/rbatis)
 - MySQL
@@ -53,7 +53,10 @@ let mut e = Enforcer::new("examples/rbac_model.conf", adapter).await?;
 ## Example
 [examples/mysql_sample.rs]("https://github.com/cody-why/casbin_rb_adapter/tree/main/examples")
 
-if you want to run the example, you need to create a .env file in the project root directory, and add the following configuration:
+How to run examples: 
+
+You need to create a .env file in the project root directory, and add the following configuration:
+
 ```
 DATABASE_URL=mysql://root:123456@localhost:3306/casbin
 ```

@@ -27,3 +27,14 @@ macro_rules! to_vec {
     }};
 }
 
+/// create a vec to string from 
+/// ```rust no run
+/// let args = vec_string!["arg1", "arg2"];
+/// ```
+#[macro_export]
+macro_rules! vec_string {
+    ($($x:expr),*) => {{
+        vec![$($x.to_string()),*]
+    }};
+}
+

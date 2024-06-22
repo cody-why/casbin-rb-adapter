@@ -5,14 +5,15 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
-
+use tracing::instrument;
 use crate::actions as adapter;
 use crate::models::*;
 use crate::utils::*;
 
+#[allow(unused)]
 macro_rules! debug {
     ($($arg:tt)+) => {{
-        // log::debug!($($arg)+)
+        // tracing::debug!($($arg)+)
     }};
 }
 /// It is a casbin adapter use rbatis to access database.
@@ -41,6 +42,7 @@ impl<'a> RbatisAdapter {
 
 #[async_trait]
 impl Adapter for RbatisAdapter {
+    #[instrument(skip(self,m), err)]
     async fn load_policy(&mut self, m: &mut dyn Model) -> Result<()> {
         let rules = adapter::load_policy(&self.pool).await?;
 
@@ -63,8 +65,8 @@ impl Adapter for RbatisAdapter {
         Ok(())
     }
 
+    #[cfg_attr(feature = "tracing", instrument(skip(self, m, f), fields(?p = f.p, ?g= f.g), err))]
     async fn load_filtered_policy<'a>(&mut self, m: &mut dyn Model, f: Filter<'a>) -> Result<()> {
-        debug!("load_filtered_policy: {:?}, {:?}", f.p, f.g);
         let rules = adapter::load_filtered_policy(&self.pool, f).await?;
         self.is_filtered.store(true, Ordering::SeqCst);
 
@@ -87,8 +89,8 @@ impl Adapter for RbatisAdapter {
         Ok(())
     }
 
+    #[cfg_attr(feature = "tracing", instrument(skip(self,m),err))]
     async fn save_policy(&mut self, m: &mut dyn Model) -> Result<()> {
-        debug!("save_policy");
         let mut rules = vec![];
 
         if let Some(ast_map) = m.get_model().get("p") {
@@ -109,43 +111,39 @@ impl Adapter for RbatisAdapter {
         adapter::save_policy(&self.pool, rules).await
     }
 
+    #[cfg_attr(feature = "tracing", instrument(skip(self),err,ret))]
     async fn add_policy(&mut self, _sec: &str, ptype: &str, rule: Vec<String>) -> Result<bool> {
-        debug!("add_policy: {:?}, {:?}", ptype, rule);
         if let Some(new_rule) = save_policy_line(ptype, rule.as_slice()) {
             let result = adapter::add_policy(&self.pool, new_rule).await;
-            debug!("add_policy: {:?}, result: {:?}", ptype, result);
             return result;
         }
 
         Ok(false)
     }
 
+    #[cfg_attr(feature = "tracing", instrument(skip(self),err,ret))]
     async fn add_policies(&mut self, _sec: &str, ptype: &str, rules: Vec<Vec<String>>) -> Result<bool> {
-        debug!("add_policies: {:?}, {:?}", ptype, rules);
         let new_rules = rules
             .iter()
             .filter_map(|x| save_policy_line(ptype, x))
             .collect::<Vec<CasbinRule>>();
 
-        let result = adapter::add_policies(&self.pool, new_rules).await;
-        debug!("add_policies: {:?}, result: {:?}", ptype, result);
-        result
+        
+        adapter::add_policies(&self.pool, new_rules).await
     }
 
+    #[cfg_attr(feature = "tracing", instrument(skip(self),err,ret))]
     async fn remove_policy(&mut self, _sec: &str, pt: &str, rule: Vec<String>) -> Result<bool> {
-        debug!("remove_policy: {:?}, {:?}", pt, rule);
-        let result = adapter::remove_policy(&self.pool, pt, rule).await;
-        debug!("remove_policy: {:?}, result: {:?}", pt, result);
-        result
+        
+        adapter::remove_policy(&self.pool, pt, rule).await
     }
 
+    #[cfg_attr(feature = "tracing", instrument(skip(self),err,ret))]
     async fn remove_policies(&mut self, _sec: &str, pt: &str, rules: Vec<Vec<String>>) -> Result<bool> {
-        debug!("remove_policies: {:?}, {:?}", pt, rules);
-        let result = adapter::remove_policies(&self.pool, pt, rules).await;
-        debug!("remove_policies: {:?}, {:?}", pt, result);
-        result
+        
+        adapter::remove_policies(&self.pool, pt, rules).await
     }
-
+    #[cfg_attr(feature = "tracing", instrument(skip(self),err,ret))]
     async fn remove_filtered_policy(
         &mut self,
         _sec: &str,
@@ -153,23 +151,19 @@ impl Adapter for RbatisAdapter {
         field_index: usize,
         field_values: Vec<String>,
     ) -> Result<bool> {
-        debug!(
-            "remove_filtered_policy: {:?}, {:?}, {:?}",
-            pt, field_index, field_values
-        );
-        let result = if field_index <= 5 && !field_values.is_empty() && field_values.len() + field_index <= 6 {
+      
+        
+        if field_index <= 5 && !field_values.is_empty() && field_values.len() + field_index <= 6 {
             adapter::remove_filtered_policy(&self.pool, pt, field_index, field_values).await
         } else {
             Ok(false)
-        };
-        debug!("remove_filtered_policy: {:?}, result: {:?}", pt, result);
-        result
+        }
     }
 
+    #[cfg_attr(feature = "tracing", instrument(skip(self),err))]
     async fn clear_policy(&mut self) -> Result<()> {
-        let result = adapter::clear_policy(&self.pool).await;
-        debug!("clear_policy: result: {:?}", result);
-        result
+        
+        adapter::clear_policy(&self.pool).await
     }
 
     fn is_filtered(&self) -> bool {
@@ -181,13 +175,12 @@ impl Adapter for RbatisAdapter {
 mod tests {
     use super::*;
     use crate::to_vec;
-    use fast_log::config;
     use rbdc_mysql::driver::MysqlDriver;
 
     #[tokio::test]
     async fn test_adapter() {
         use casbin::prelude::*;
-        fast_log::init(config::Config::new().console()).unwrap();
+        tracing_subscriber::fmt::init();
         let file_adapter = FileAdapter::new("examples/rbac_policy.csv");
         let m = DefaultModel::from_file("examples/rbac_model.conf").await.unwrap();
         let mut e = Enforcer::new(m, file_adapter).await.unwrap();
@@ -336,7 +329,7 @@ mod tests {
             .remove_filtered_policy("", "g", 0, to_vec!["carol"],)
             .await
             .unwrap());
-        assert_eq!(vec![String::new(); 0], e.get_roles_for_user("carol", None));
+        assert_eq!(vec![] as Vec<String>, e.get_roles_for_user("carol", None));
 
         // GitHub issue: https://github.com/casbin-rs/sqlx-adapter/pull/90
         // add policies:
