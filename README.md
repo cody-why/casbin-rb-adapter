@@ -21,9 +21,9 @@ Rbatis adapter for casbin. With this library, Casbin can load policy or save pol
 Add the following to `Cargo.toml`:
 ```toml
 [dependencies]
-casbin-rb-adapter = "0"
+casbin-rb-adapter = "0.1"
 # casbin or use casbin_rb_adapter::casbin
-# casbin = "2"
+casbin = "2"
 
 # rbatis integration
 rbs = "4"
@@ -50,6 +50,11 @@ let mut e = Enforcer::new("examples/rbac_model.conf", adapter).await?;
 // e.enforce((sub, obj, act)).await?;
 ```
 
+features: 
+- `tracing` logger for Adapter, 
+- `runtime-tokio` runtime for casbin.
+- `runtime-async-std` runtime for casbin.
+
 ## Example
 [examples/mysql_sample.rs]("https://github.com/cody-why/casbin_rb_adapter/tree/main/examples")
 
@@ -60,3 +65,6 @@ You need to create a .env file in the project root directory, and add the follow
 ```
 DATABASE_URL=mysql://root:123456@localhost:3306/casbin
 ```
+
+# update log
+- v0.1.9: add `runtime-tokio` and `runtime-async-std` features for casbin, add `tracing` feature logger for Adapter. default feature `runtime-tokio`.
