@@ -8,10 +8,10 @@
 //! let mut e = Enforcer::new("examples/rbac_model.conf", adapter).await?;
 //! // e.enforce((sub, obj, act)).await?;
 //! ```
-//! 
+//!
 mod actions;
-mod models;
 mod adapter;
+mod models;
 mod utils;
 pub use adapter::RbatisAdapter;
 pub use casbin;
@@ -27,7 +27,7 @@ macro_rules! to_vec {
     }};
 }
 
-/// create a vec to string from 
+/// create a vec to string from
 /// ```rust no run
 /// let args = vec_string!["arg1", "arg2"];
 /// ```
@@ -37,4 +37,3 @@ macro_rules! vec_string {
         vec![$($x.to_string()),*]
     }};
 }
-

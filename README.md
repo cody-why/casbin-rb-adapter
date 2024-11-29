@@ -51,12 +51,12 @@ let mut e = Enforcer::new("examples/rbac_model.conf", adapter).await?;
 ```
 
 features: 
-- `tracing` logger for Adapter, 
+- `tracing` logger for Adapter. 
 - `runtime-tokio` runtime for casbin.
 - `runtime-async-std` runtime for casbin.
 
 ## Example
-[examples/mysql_sample.rs]("https://github.com/cody-why/casbin_rb_adapter/tree/main/examples")
+[examples]("https://github.com/cody-why/casbin-rb-adapter/tree/master/examples")
 
 How to run examples: 
 

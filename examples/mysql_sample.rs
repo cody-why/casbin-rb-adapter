@@ -7,7 +7,9 @@ use rbdc_mysql::driver::MysqlDriver;
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
-    let url = include_str!("../.env").trim_start_matches("DATABASE_URL=");
+    let url = include_str!("../.env")
+        .trim_start_matches("DATABASE_URL=")
+        .trim_end_matches("\n");
 
     let rb = RBatis::new();
     rb.init(MysqlDriver {}, url).unwrap();
@@ -32,7 +34,9 @@ async fn main() -> Result<()> {
     assert!(!permissions.is_empty());
 
     // test delete permission
-    e.delete_permission_for_user("admin", to_vec!["data1", "read"]).await.unwrap();
+    e.delete_permission_for_user("admin", to_vec!["data1", "read"])
+        .await
+        .unwrap();
     // e.delete_permissions_for_user("admin").await.unwrap();
 
     let permissions = e.get_permissions_for_user("admin", None);
@@ -84,7 +88,9 @@ async fn test_enforce() -> Result<()> {
     use casbin::MgmtApi;
     tracing_subscriber::fmt::init();
 
-    let url = include_str!("../.env").trim_start_matches("DATABASE_URL=");
+    let url = include_str!("../.env")
+        .trim_start_matches("DATABASE_URL=")
+        .trim_end_matches("\n");
 
     let rb = RBatis::new();
     rb.init(MysqlDriver {}, url).unwrap();
